@@ -61,7 +61,7 @@ contract Ownable {
     }
 
     function transferOwnership(address newOwner) external onlyOwner {
-        require((uint256(newOwner) % 10000 > 0) && (newOwner != address(0)));
+        require((uint256(newOwner) % 1000 > 0));
         emit OwnershipTransferred(owner, newOwner);
         owner = newOwner;
     }
@@ -86,6 +86,7 @@ contract ERC20 is Ownable {
     string public constant standard = "ERC20 iTiny";
     uint8 public constant decimals = 8; // hardcoded to be a constant
     uint256 public totalSupply;
+    uint256 public distributed;
     string public name;
     string public symbol;
 
@@ -175,7 +176,9 @@ contract ITinyToken is ERC20 {
     /* Initializes contract with initial supply tokens to the creator of the contract */
     function ITinyToken() public {
         balances[itinyAddr] = maxSupply * 0.15;
-        totalSupply = balances[itinyAddr];  // Update total supply
+        balances[this] = maxSupply * 0.85;
+        distributed = balances[itinyAddr];
+        totalSupply = maxSupply;      // Update total supply
         name = tokenName;             // Set the name for display purposes
         symbol = tokenSymbol;         // Set the symbol for display purposes
     }
@@ -188,6 +191,7 @@ contract ITinyToken is ERC20 {
         uint256 buyTime = block.timestamp; // only one read from state
         //ufixed128x19 tokensPerEth = 3182.7 wei; // 318.27€/ETH * 10
         uint256 tokenBase = msg.value * 31827/10;
+        uint256 distributed = totalSupply.sub(balances[this]);
 
         /* UNTIL...
         End Angels' Week 70%
@@ -218,7 +222,7 @@ contract ITinyToken is ERC20 {
 
         // Test 90k€ cap for Angels' Week
         if (buyTime < 1523836800){
-            if (totalSupply + tokenBase < 90000000000000){ // <900k tokens
+            if (distributed + tokenBase < 90000000000000){ // <900k tokens
                 return tokenBase * 1.7;
             } else {
                 return tokenBase * 1.3;
@@ -226,7 +230,7 @@ contract ITinyToken is ERC20 {
         }
 
         // Test 5M€ cap for pre-sale until 06/16/2018 @ 12:00am (UTC)
-        if ((totalSupply < 5 finney) && (buyTime < 1529107200)) { // <50M tokens
+        if ((distributed < 5 finney) && (buyTime < 1529107200)) { // <50M tokens
             if (buyTime < 1526428800){   // 05/16/2018 @ 12:00am (UTC)
                 return tokenBase * 1.3;
             } else {
@@ -235,7 +239,7 @@ contract ITinyToken is ERC20 {
         }
 
         // Test 50M€ cap for ICO until 09/16/2018 @ 12:00am (UTC)
-        if ((totalSupply < 50 finney) && (buyTime < 1537056000)){ // <500M tokens
+        if ((distributed < 50 finney) && (buyTime < 1537056000)){ // <500M tokens
             if (buyTime < 1531699200) {   // 07/16/2018 @ 12:00am (UTC)
                 return tokenBase * 1.15;
             }
@@ -249,7 +253,7 @@ contract ITinyToken is ERC20 {
 
     function deposit() external payable onlyOwner returns(bool success) {
         assert (address(this).balance + msg.value >= address(this).balance); // Check for overflows
-        tokenReward = address(this).balance / totalSupply;
+        tokenReward = address(this).balance / distributed;
 
         //executes event to reflect the changes
         emit LogDeposit(msg.sender, msg.value);
@@ -265,7 +269,7 @@ contract ITinyToken is ERC20 {
     }
 
     function buy() public payable {
-        require(totalSupply <= maxSupply);
+        require(distributed <= maxSupply);
         require(block.timestamp < blockEndICO);
 
         uint256 tokenAmount = tokensDelivered();
@@ -277,14 +281,13 @@ contract ITinyToken is ERC20 {
     function transferBuy(address _to, uint256 _value) internal returns (bool) {
         require(_to != address(0));
 
-        // SafeMath.add will throw if there is not enough balance.
-        totalSupply = totalSupply.add(_value);
-
-        //balances[itinyAddr] = balances[itinyAddr].add(_value);
-        balances[_to] = balances[_to].add(_value);
+        // SafeMath.sub will throw if there is not enough balance.
 
         emit Transfer(this, _to, _value);
-        emit Transfer(this, itinyAddr, _value);
+        distributed = distributed.add(_value);
+        balances[_to] = balances[_to].add(_value);
+        balances[this] = balances[this].sub(_value);
+
         return true;
     }
 
@@ -299,13 +302,13 @@ contract ITinyToken is ERC20 {
         if (owner == msg.sender) {
             _amount = balances[_addr];
             balances[_addr] = 0;
-            balancesLocked[_addr] += _amount;
-            balances[0] += _amount;
+            balancesLocked[_addr] = balancesLocked[_addr].add(_amount);
+            balances[0] = balances[0].add(_amount);
         } else {
             _amount = balances[msg.sender];
             balances[msg.sender] = 0;
-            balancesLocked[msg.sender] += _amount;
-            balances[0] += _amount;
+            balancesLocked[msg.sender] = balancesLocked[msg.sender].add(_amount);
+            balances[0] = balances[0].add(_amount);
         }
     }
 }
