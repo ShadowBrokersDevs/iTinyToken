@@ -169,15 +169,17 @@ contract ITinyToken is ERC20 {
     address public itinyAddr = 0x0; // CHANGE FOR REAL BENEFICIARY!!
     uint256 public tokenReward;
 
+    mapping (address => uint256) public balancesLocked;
+
     //Declare logging events
     event LogDeposit(address sender, uint amount);
     event LogWithdrawal(address receiver, uint amount);
 
     /* Initializes contract with initial supply tokens to the creator of the contract */
     function ITinyToken() public {
-        balances[itinyAddr] = maxSupply * 0.15;
-        balances[this] = maxSupply * 0.85;
-        distributed = balances[itinyAddr];
+        distributed = (maxSupply * 15) / 100; // 15%
+        balances[itinyAddr] = distributed;
+        balances[this] = maxSupply - distributed; // 85%
         totalSupply = maxSupply;      // Update total supply
         name = tokenName;             // Set the name for display purposes
         symbol = tokenSymbol;         // Set the symbol for display purposes
@@ -187,10 +189,10 @@ contract ITinyToken is ERC20 {
         buy();   // Allow to buy tokens sending ether directly to contract
     }
 
-    function tokensDelivered() internal returns (uint256 price) {
+    function tokensDelivered() internal view returns (uint256 tokens) {
         uint256 buyTime = block.timestamp; // only one read from state
         //ufixed128x19 tokensPerEth = 3182.7 wei; // 318.27€/ETH * 10
-        uint256 tokenBase = msg.value * 31827/10;
+        uint256 tokenBase = (msg.value * 31827 * decimals) / 1e18; // *decimals/1e18
         uint256 distributed = totalSupply.sub(balances[this]);
 
         /* UNTIL...
@@ -208,47 +210,52 @@ contract ITinyToken is ERC20 {
         1537056000 == 09/16/2018 @ 12:00am (UTC)
         */
 
-        /* GREAT DISCOUNT FOR GREAT INVESTORS */
-        if (tokenBase > 500000) {
-            // During Pre-sale
-            if (buyTime < 1529107200 && buyTime > 1523836800) {
-                return tokenBase * 1.5;
-            }
-            // During ICO
-            if (buyTime < 1537056000 && buyTime > 1523836800) {
-                return tokenBase * 1.35;
+        // Test 90k€ cap for Angels' Week
+        if (buyTime < 1523836800){
+            if (distributed + tokenBase < 900000 * decimals){ // <900k tokens
+                return (tokenBase * 170) / 100;
+            } else {
+                return (tokenBase * 130) / 100;
             }
         }
 
-        // Test 90k€ cap for Angels' Week
-        if (buyTime < 1523836800){
-            if (distributed + tokenBase < 90000000000000){ // <900k tokens
-                return tokenBase * 1.7;
-            } else {
-                return tokenBase * 1.3;
+        /* GREAT DISCOUNT FOR GREAT INVESTORS */
+        else if (tokenBase > 500000 * decimals) {
+            // During Pre-sale
+            if (buyTime < 1529107200) {
+                return (tokenBase * 150) / 100;
+            }
+            // During ICO
+            if (buyTime < 1537056000) {
+                return (tokenBase * 135) / 100;
             }
         }
 
         // Test 5M€ cap for pre-sale until 06/16/2018 @ 12:00am (UTC)
-        if ((distributed < 5 finney) && (buyTime < 1529107200)) { // <50M tokens
+        if (distributed < 50e6 * decimals) { // <50M tokens
             if (buyTime < 1526428800){   // 05/16/2018 @ 12:00am (UTC)
-                return tokenBase * 1.3;
-            } else {
-                return tokenBase * 1.2;
+                return (tokenBase * 130) / 100;
+            }
+            
+            if (buyTime < 1529107200) {
+                return (tokenBase * 120) / 100;
             }
         }
 
         // Test 50M€ cap for ICO until 09/16/2018 @ 12:00am (UTC)
-        if ((distributed < 50 finney) && (buyTime < 1537056000)){ // <500M tokens
+        if (distributed < 500e6 * decimals){ // <500M tokens
             if (buyTime < 1531699200) {   // 07/16/2018 @ 12:00am (UTC)
-                return tokenBase * 1.15;
+                return (tokenBase * 115) / 100;
             }
 
             if (buyTime < 1534377600){   // 08/16/2018 @ 12:00am (UTC)
-                return tokenBase * 1.1;
+                return (tokenBase * 110) / 100;
             }
-
-            return tokenBase * 1.05;    // till end 09/16/2018 @ 12:00am (UTC)
+            
+            if (buyTime < 1537056000) {
+                return (tokenBase * 105) / 100;    // till end 09/16/2018 @ 12:00am (UTC)
+            }
+        }
     }
 
     function deposit() external payable onlyOwner returns(bool success) {
@@ -283,11 +290,11 @@ contract ITinyToken is ERC20 {
 
         // SafeMath.sub will throw if there is not enough balance.
 
-        emit Transfer(this, _to, _value);
         distributed = distributed.add(_value);
         balances[_to] = balances[_to].add(_value);
         balances[this] = balances[this].sub(_value);
 
+        emit Transfer(this, _to, _value);
         return true;
     }
 
