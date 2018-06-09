@@ -114,11 +114,7 @@ interface tokenRecipient {
 contract ITinyToken is ERC20 {
 
     // Contract variables and constants
-    uint256 constant initialSupply = 0;
-    uint256 constant maxSupply = 1000000000000000;
-    string constant tokenName = "iTinyToken";
-    string constant tokenSymbol = "ITNY";
-
+    uint256 constant maxSupply = 50000000000000000; // 500M * 10^decimals
     address public itinyAddr = 0x0; // CHANGE FOR REAL BENEFICIARY!!
     uint256 public tokenReward;
 
@@ -129,13 +125,13 @@ contract ITinyToken is ERC20 {
     event LogWithdrawal(address receiver, uint amount);
 
     /* Initializes contract with initial supply tokens to the creator of the contract */
-    function ITinyToken() public {
-        distributed = (maxSupply * 15) / 100; // 15%
-        balances[itinyAddr] = distributed;
-        balances[this] = maxSupply - distributed; // 85%
-        totalSupply = maxSupply;      // Update total supply
-        name = tokenName;             // Set the name for display purposes
-        symbol = tokenSymbol;         // Set the symbol for display purposes
+    constructor () public {
+        balances[this] = (maxSupply * 80) / 100; // 80%
+        distributed = maxSupply - balances[this];
+        balances[itinyAddr] = distributed; // 20%
+        totalSupply = maxSupply;      // Max supply
+        name = "iTinyToken";
+        symbol = "ITNY";
     }
 
     function () public payable {
@@ -145,7 +141,7 @@ contract ITinyToken is ERC20 {
     function tokensDelivered() internal view returns (uint256 tokens) {
         uint256 buyTime = block.timestamp; // only one read from state
         //ufixed128x19 tokensPerEth = 3182.7 wei; // 318.27€/ETH * 10
-        uint256 tokenBase = (msg.value * 31827 * decimals) / 1e18; // *decimals/1e18
+        uint256 tokenBase = (msg.value * 31827 * decimals) / 1e18;
         uint256 distributed = totalSupply.sub(balances[this]);
 
         /* UNTIL...
@@ -219,7 +215,7 @@ contract ITinyToken is ERC20 {
         emit LogDeposit(msg.sender, msg.value);
         return true;
     }
-
+/*
     function withdraw(uint256 value) external onlyOwner {
         //send eth to owner address
         msg.sender.transfer(value);
@@ -227,9 +223,9 @@ contract ITinyToken is ERC20 {
         //executes event to register the changes
         emit LogWithdrawal(msg.sender, value);
     }
-
+*/
     function buy() public payable {
-        require(distributed <= maxSupply);
+        require(distributed < maxSupply);
         require(block.timestamp < blockEndICO);
 
         uint256 tokenAmount = tokensDelivered();
@@ -251,9 +247,9 @@ contract ITinyToken is ERC20 {
         return true;
     }
 
-    function burn(address addr) external onlyOwner{
-        totalSupply = totalSupply.sub(balances[addr]);
-        balances[addr] = 0;
+    function burn(address _addr) external onlyOwner{
+        totalSupply = totalSupply.sub(balances[_addr]);
+        balances[_addr] = 0;
     }
 
     function freeze(address _addr) external {
