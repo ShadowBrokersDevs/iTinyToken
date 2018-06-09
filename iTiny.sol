@@ -1,4 +1,7 @@
-pragma solidity ^0.4.19;
+pragma solidity ^0.4.23;
+
+import "https://github.com/OpenZeppelin/openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "https://github.com/OpenZeppelin/openzeppelin-solidity/contracts/ownership/Ownable.sol";
 
 /*
     Copyright 2018,
@@ -18,56 +21,6 @@ pragma solidity ^0.4.19;
  */
 
 
-library SafeMath {
-    function mul(uint256 a, uint256 b) internal pure returns (uint256) {
-        if (a == 0)
-            return 0;
-        uint256 c = a * b;
-        assert(c / a == b);
-        return c;
-    }
-
-    function div(uint256 a, uint256 b) internal pure returns (uint256) {
-        // assert(b > 0); // Solidity automatically throws when dividing by 0
-        uint256 c = a / b;
-        return c;
-    }
-
-    function sub(uint256 a, uint256 b) internal pure returns (uint256) {
-        assert(b <= a);
-        return a - b;
-    }
-
-    function add(uint256 a, uint256 b) internal pure returns (uint256) {
-        uint256 c = a + b;
-        assert(c >= a);
-        return c;
-    }
-}
-
-
-contract Ownable {
-    address public owner;
-
-    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
-
-    function Ownable() internal {
-        owner = msg.sender;
-    }
-
-    modifier onlyOwner() {
-        require(msg.sender == owner);
-        _;
-    }
-
-    function transferOwnership(address newOwner) external onlyOwner {
-        require((uint256(newOwner) % 1000 > 0));
-        emit OwnershipTransferred(owner, newOwner);
-        owner = newOwner;
-    }
-}
-
-
 //////////////////////////////////////////////////////////////
 //                                                          //
 //  iTinyToken's ERC20                                      //
@@ -83,7 +36,7 @@ contract ERC20 is Ownable {
 
     uint256 public constant blockEndICO = 5406151; // 167d * 3600s / 14.2s + 5363813 (09/16/2018) @ 2:00am (UTC)
     /* Public variables for the ERC20 token */
-    string public constant standard = "ERC20 iTiny";
+    string public constant standard = "ERC20 ERC";
     uint8 public constant decimals = 8; // hardcoded to be a constant
     uint256 public totalSupply;
     uint256 public distributed;
@@ -174,7 +127,7 @@ contract ITinyToken is ERC20 {
     event LogWithdrawal(address receiver, uint amount);
 
     /* Initializes contract with initial supply tokens to the creator of the contract */
-    function ITinyToken() public {
+    constructor () public {
         balances[itinyAddr] = maxSupply * 0.15;
         balances[this] = maxSupply * 0.85;
         distributed = balances[itinyAddr];
