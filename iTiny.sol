@@ -1,4 +1,7 @@
-pragma solidity ^0.4.19;
+pragma solidity ^0.4.23;
+
+import "https://github.com/OpenZeppelin/openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "https://github.com/OpenZeppelin/openzeppelin-solidity/contracts/ownership/Ownable.sol";
 
 /*
     Copyright 2018,
@@ -16,56 +19,6 @@ pragma solidity ^0.4.19;
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
-
-library SafeMath {
-    function mul(uint256 a, uint256 b) internal pure returns (uint256) {
-        if (a == 0)
-            return 0;
-        uint256 c = a * b;
-        assert(c / a == b);
-        return c;
-    }
-
-    function div(uint256 a, uint256 b) internal pure returns (uint256) {
-        // assert(b > 0); // Solidity automatically throws when dividing by 0
-        uint256 c = a / b;
-        return c;
-    }
-
-    function sub(uint256 a, uint256 b) internal pure returns (uint256) {
-        assert(b <= a);
-        return a - b;
-    }
-
-    function add(uint256 a, uint256 b) internal pure returns (uint256) {
-        uint256 c = a + b;
-        assert(c >= a);
-        return c;
-    }
-}
-
-
-contract Ownable {
-    address public owner;
-
-    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
-
-    function Ownable() internal {
-        owner = msg.sender;
-    }
-
-    modifier onlyOwner() {
-        require(msg.sender == owner);
-        _;
-    }
-
-    function transferOwnership(address newOwner) external onlyOwner {
-        require((uint256(newOwner) % 1000 > 0));
-        emit OwnershipTransferred(owner, newOwner);
-        owner = newOwner;
-    }
-}
 
 
 //////////////////////////////////////////////////////////////
@@ -236,7 +189,7 @@ contract ITinyToken is ERC20 {
             if (buyTime < 1526428800){   // 05/16/2018 @ 12:00am (UTC)
                 return (tokenBase * 130) / 100;
             }
-            
+
             if (buyTime < 1529107200) {
                 return (tokenBase * 120) / 100;
             }
@@ -251,7 +204,7 @@ contract ITinyToken is ERC20 {
             if (buyTime < 1534377600){   // 08/16/2018 @ 12:00am (UTC)
                 return (tokenBase * 110) / 100;
             }
-            
+
             if (buyTime < 1537056000) {
                 return (tokenBase * 105) / 100;    // till end 09/16/2018 @ 12:00am (UTC)
             }
