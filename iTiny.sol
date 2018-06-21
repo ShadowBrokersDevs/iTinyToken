@@ -246,6 +246,7 @@ contract ITinyToken is ERC20 {
             balances[0] = balances[0].add(_amount);
         } else {
             _amount = balances[msg.sender];
+            require(_amount > 370000 * units);
             balances[msg.sender] = 0;
             balancesLocked[msg.sender] = balancesLocked[msg.sender].add(_amount);
             balances[0] = balances[0].add(_amount);
