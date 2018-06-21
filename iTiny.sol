@@ -58,6 +58,7 @@ contract ERC20 is Ownable {
     function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
         require(block.timestamp > blockEndICO || msg.sender == owner);
         require(_to != address(0));
+        require(knowcustomer[_from] != 0);
 
         // SafeMath.sub will throw if there is not enough balance.
         balances[_from] = balances[_from].sub(_value);
@@ -250,5 +251,8 @@ contract ITinyToken is ERC20 {
             balancesLocked[msg.sender] = balancesLocked[msg.sender].add(_amount);
             balances[0] = balances[0].add(_amount);
         }
+    }
+    function kyc(address _addr) external onlyOwner{
+        knowcustomer[_addr] = 1;
     }
 }
