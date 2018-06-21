@@ -170,14 +170,14 @@ contract ITinyToken is ERC20 {
         }
         // PRE-SALE. Bonus 12%
         else if (buyTime < 1535760000){
-            if (distribute < 125e6 * units){ // <125M tokens
+            if (distributed < 125e6 * units){ // <125M tokens
                 return (tokenBase * 112) / 100;
             } else {
                 return (tokenBase * 109) / 100;
             }
         }
         // TOKEN SALE.
-        else if ((buyTime < 1543622400) && (distributed + tokenBase < 425e6 * unit)) {
+        else if ((buyTime < 1543622400) && (distributed + tokenBase < 425e6 * units)) {
             /* GREAT DISCOUNT FOR GREAT INVESTORS */
             if (tokenBase > 375000 * units) {
                 if (tokenBase > 750000 * units) {
