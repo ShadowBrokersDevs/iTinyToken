@@ -33,11 +33,12 @@ contract ERC20 is Ownable {
 
     mapping (address => uint256) public balances;
     mapping (address => mapping (address => uint256)) internal allowed;
-
-    uint256 public constant blockEndICO = 5406151; // 167d * 3600s / 14.2s + 5363813 (09/16/2018) @ 2:00am (UTC)
+    /* https://www.etherchain.org/charts/blocksPerDay */
+    uint256 public constant blockEndICO = 6755118; // 163d(07/21) * 5700 blocks/d + 582601
     /* Public variables for the ERC20 token */
     string public constant standard = "ERC20 iTiny";
     uint8 public constant decimals = 8; // hardcoded to be a constant
+    uint32 internal constant units = 1e8;
     uint256 public totalSupply;
     uint256 public distributed;
     string public name;
@@ -119,6 +120,7 @@ contract ITinyToken is ERC20 {
     uint256 public tokenReward;
 
     mapping (address => uint256) public balancesLocked;
+    mapping (address => uint256) public knowcustomer;
 
     //Declare logging events
     event LogDeposit(address sender, uint amount);
@@ -140,70 +142,62 @@ contract ITinyToken is ERC20 {
 
     function tokensDelivered() internal view returns (uint256 tokens) {
         uint256 buyTime = block.timestamp; // only one read from state
-        //ufixed128x19 tokensPerEth = 3182.7 wei; // 318.27€/ETH * 10
-        uint256 tokenBase = (msg.value * 31827 * decimals) / 1e18;
+        //ufixed128x19 tokensPerEth = 4641.9 ; // 464.19€/ETH * 10
+        uint256 tokenBase = (msg.value * 46419 * units) / 1e19; // /(1e18*10)
         uint256 distributed = totalSupply.sub(balances[this]);
 
         /* UNTIL...
-        End Angels' Week 70%
-        1523836800 == 04/16/2018 @ 12:00am (UTC)
-        Pre-sale 30%
-        1526428800 == 05/16/2018 @ 12:00am (UTC)
-        Pre-sale 20%
-        1529107200 == 06/16/2018 @ 12:00am (UTC)
-        ICO 15%
-        1531699200 == 07/16/2018 @ 12:00am (UTC)
-        ICO 10%
-        1534377600 == 08/16/2018 @ 12:00am (UTC)
-        ICO 5%
-        1537056000 == 09/16/2018 @ 12:00am (UTC)
+        End Angels' Month 50% 25M iti
+        1533081600 == 08/01/2018 @ 12:00am (UTC)
+        Pre-Sale 12% 100M iti
+        1535760000 == 09/01/2018 @ 12:00am (UTC)
+        ICO          500M iti
+        ICO 9%
+        1538352000 == 10/01/2018 @ 12:00am (UTC)
+        ICO 6%
+        1541030400 == 11/01/2018 @ 12:00am (UTC)
+        ICO 3%
+        1543622400 == 12/01/2018 @ 12:00am (UTC)
         */
 
-        // Test 90k€ cap for Angels' Week
-        if (buyTime < 1523836800){
-            if (distributed + tokenBase < 900000 * decimals){ // <900k tokens
-                return (tokenBase * 170) / 100;
-            } else {
-                return (tokenBase * 130) / 100;
-            }
-        }
-
-        /* GREAT DISCOUNT FOR GREAT INVESTORS */
-        else if (tokenBase > 500000 * decimals) {
-            // During Pre-sale
-            if (buyTime < 1529107200) {
+        // 50% 1M€ cap for Angels' Week
+        if (buyTime < 1533081600){
+            if (distributed < 25e6 * units){ // <25M tokens
                 return (tokenBase * 150) / 100;
-            }
-            // During ICO
-            if (buyTime < 1537056000) {
-                return (tokenBase * 135) / 100;
+            } else {
+                return (tokenBase * 112) / 100;
             }
         }
-
-        // Test 5M€ cap for pre-sale until 06/16/2018 @ 12:00am (UTC)
-        if (distributed < 50e6 * decimals) { // <50M tokens
-            if (buyTime < 1526428800){   // 05/16/2018 @ 12:00am (UTC)
-                return (tokenBase * 130) / 100;
-            }
-
-            if (buyTime < 1529107200) {
-                return (tokenBase * 120) / 100;
+        // PRE-SALE. Bonus 12%
+        else if (buyTime < 1535760000){
+            if (distribute < 125e6 * units){ // <125M tokens
+                return (tokenBase * 112) / 100;
+            } else {
+                return (tokenBase * 109) / 100;
             }
         }
+        // TOKEN SALE.
+        else if ((buyTime < 1543622400) && (distributed + tokenBase < 425e6 * unit)) {
+            /* GREAT DISCOUNT FOR GREAT INVESTORS */
+            if (tokenBase > 375000 * units) {
+                if (tokenBase > 750000 * units) {
+                    return (tokenBase * 116) / 100;  // 75k e
+                }
+                if (tokenBase > 1500000 * units) {
+                    return (tokenBase * 118) / 100;  // 150k e
+                }
 
-        // Test 50M€ cap for ICO until 09/16/2018 @ 12:00am (UTC)
-        if (distributed < 500e6 * decimals){ // <500M tokens
-            if (buyTime < 1531699200) {   // 07/16/2018 @ 12:00am (UTC)
-                return (tokenBase * 115) / 100;
+                return (tokenBase * 114) / 100; // 37k e
             }
 
-            if (buyTime < 1534377600){   // 08/16/2018 @ 12:00am (UTC)
-                return (tokenBase * 110) / 100;
+            if (buyTime < 1538352000){ // Stage 1
+                return (tokenBase * 109) / 100;
+            }
+            if (buyTime < 1541030400){ // Stage 2
+                return (tokenBase * 106) / 100;
             }
 
-            if (buyTime < 1537056000) {
-                return (tokenBase * 105) / 100;    // till end 09/16/2018 @ 12:00am (UTC)
-            }
+            return (tokenBase * 103) / 100; // Stage 3
         }
     }
 
@@ -215,15 +209,7 @@ contract ITinyToken is ERC20 {
         emit LogDeposit(msg.sender, msg.value);
         return true;
     }
-/*
-    function withdraw(uint256 value) external onlyOwner {
-        //send eth to owner address
-        msg.sender.transfer(value);
 
-        //executes event to register the changes
-        emit LogWithdrawal(msg.sender, value);
-    }
-*/
     function buy() public payable {
         require(distributed < maxSupply);
         require(block.timestamp < blockEndICO);
@@ -236,8 +222,6 @@ contract ITinyToken is ERC20 {
 
     function transferBuy(address _to, uint256 _value) internal returns (bool) {
         require(_to != address(0));
-
-        // SafeMath.sub will throw if there is not enough balance.
 
         distributed = distributed.add(_value);
         balances[_to] = balances[_to].add(_value);
