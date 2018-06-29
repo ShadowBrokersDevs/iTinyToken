@@ -59,15 +59,15 @@ contract ERC20 is Ownable {
 
     function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
         uint256 timestamp = block.timestamp;
-        require(timestamp > timeEndSale || msg.sender == owner);
         require(_to != address(0));
-        require(holdUntil[_from] == 0 || holdUntil[_from] < timestamp);
-
+        if (msg.sender != owner) {
+            require(holdUntil[_from] == 0 || timestamp > holdUntil[_from]);
+            require(timestamp > timeEndSale);
+            if (_from != msg.sender)
+                allowed[_from][msg.sender] = allowed[_from][msg.sender].sub(_value);
+        }
         // SafeMath.sub will throw if there is not enough balance.
         balances[_from] = balances[_from].sub(_value);
-        if (_from != msg.sender)
-            allowed[_from][msg.sender] = allowed[_from][msg.sender].sub(_value);
-
         balances[_to] = balances[_to].add(_value);
 
         emit Transfer(_from, _to, _value);
