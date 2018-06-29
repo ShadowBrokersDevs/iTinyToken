@@ -130,7 +130,7 @@ contract ITinyToken is ERC20 {
     /* Initializes contract with initial supply tokens to the creator of the contract */
     constructor () public {
         balances[this] = (maxSupply * 80) / 100; // 80%
-        distributed = maxSupply - balances[this];
+        distributed = maxSupply.sub(balances[this]);
         balances[itinyAddr] = distributed; // 20%
         totalSupply = maxSupply;      // Max supply
         name = "iTinyToken";
