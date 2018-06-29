@@ -32,6 +32,7 @@ contract ERC20 is Ownable {
     using SafeMath for uint256;
 
     mapping (address => uint256) public balances;
+    mapping (address => uint256) public holdUntil;
     mapping (address => mapping (address => uint256)) internal allowed;
     /* https://www.etherchain.org/charts/blocksPerDay */
     //uint256 public constant blockEndICO = 6755118; // 163d(07/21) * 5700 blocks/d + 582601
@@ -123,7 +124,6 @@ contract ITinyToken is ERC20 {
     uint256 public tokenReward;
 
     mapping (address => uint256) public balancesLocked;
-    mapping (address => uint256) public holdUntil;
 
     //Declare logging events
     event LogDeposit(address sender, uint amount);
