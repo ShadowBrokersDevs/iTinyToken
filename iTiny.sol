@@ -34,7 +34,8 @@ contract ERC20 is Ownable {
     mapping (address => uint256) public balances;
     mapping (address => mapping (address => uint256)) internal allowed;
     /* https://www.etherchain.org/charts/blocksPerDay */
-    uint256 public constant blockEndICO = 6755118; // 163d(07/21) * 5700 blocks/d + 582601
+    //uint256 public constant blockEndICO = 6755118; // 163d(07/21) * 5700 blocks/d + 582601
+    uint256 public constant timeEndSale = 1543622400; // It's a timestamp
     /* Public variables for the ERC20 token */
     string public constant standard = "ERC20 iTiny";
     uint8 public constant decimals = 8; // hardcoded to be a constant
@@ -56,7 +57,7 @@ contract ERC20 is Ownable {
     }
 
     function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
-        require(block.timestamp > blockEndICO || msg.sender == owner);
+        require(block.timestamp > timeEndSale || msg.sender == owner);
         require(_to != address(0));
 
         // SafeMath.sub will throw if there is not enough balance.
@@ -120,11 +121,11 @@ contract ITinyToken is ERC20 {
     uint256 public tokenReward;
 
     mapping (address => uint256) public balancesLocked;
-    mapping (address => uint256) public knowcustomer;
 
     //Declare logging events
     event LogDeposit(address sender, uint amount);
     event LogWithdrawal(address receiver, uint amount);
+    event ReserveFunds(address sender, uint amount);
 
     /* Initializes contract with initial supply tokens to the creator of the contract */
     constructor () public {
@@ -151,12 +152,12 @@ contract ITinyToken is ERC20 {
         1533081600 == 08/01/2018 @ 12:00am (UTC)
         Pre-Sale 12% 100M iti
         1535760000 == 09/01/2018 @ 12:00am (UTC)
-        ICO          500M iti
-        ICO 9%
+        Token Sale          500M iti
+        Sale 9%
         1538352000 == 10/01/2018 @ 12:00am (UTC)
-        ICO 6%
+        Sale 6%
         1541030400 == 11/01/2018 @ 12:00am (UTC)
-        ICO 3%
+        Sale 3%
         1543622400 == 12/01/2018 @ 12:00am (UTC)
         */
 
@@ -212,7 +213,7 @@ contract ITinyToken is ERC20 {
 
     function buy() public payable {
         require(distributed < maxSupply);
-        require(block.timestamp < blockEndICO);
+        require(block.timestamp < timeEndSale);
 
         uint256 tokenAmount = tokensDelivered();
         transferBuy(msg.sender, tokenAmount);
@@ -237,19 +238,21 @@ contract ITinyToken is ERC20 {
     }
 
     function freeze(address _addr) external {
-        require(block.timestamp <= blockEndICO || msg.sender == owner);
+        require(block.timestamp <= timeEndSale || msg.sender == owner);
         uint256 _amount;
         if (owner == msg.sender) {
             _amount = balances[_addr];
             balances[_addr] = 0;
             balancesLocked[_addr] = balancesLocked[_addr].add(_amount);
             balances[0] = balances[0].add(_amount);
+            emit ReserveFunds(_addr, _amount);
         } else {
             _amount = balances[msg.sender];
             require(_amount > 370000 * units);
             balances[msg.sender] = 0;
             balancesLocked[msg.sender] = balancesLocked[msg.sender].add(_amount);
             balances[0] = balances[0].add(_amount);
+            emit ReserveFunds(msg.sender, _amount);
         }
     }
 }
