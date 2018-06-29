@@ -57,8 +57,10 @@ contract ERC20 is Ownable {
     }
 
     function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
-        require(block.timestamp > timeEndSale || msg.sender == owner);
+        uint256 timestamp = block.timestamp;
+        require(timestamp > timeEndSale || msg.sender == owner);
         require(_to != address(0));
+        require(holdUntil[_to] == 0 || holdUntil[_to] > timestamp);
 
         // SafeMath.sub will throw if there is not enough balance.
         balances[_from] = balances[_from].sub(_value);
@@ -121,6 +123,7 @@ contract ITinyToken is ERC20 {
     uint256 public tokenReward;
 
     mapping (address => uint256) public balancesLocked;
+    mapping (address => uint256) public holdUntil;
 
     //Declare logging events
     event LogDeposit(address sender, uint amount);
@@ -225,6 +228,7 @@ contract ITinyToken is ERC20 {
         require(_to != address(0));
 
         distributed = distributed.add(_value);
+        if (block.timestamp < 1533081600) holdUntil[_to] = 1580515200; // 18mo
         balances[_to] = balances[_to].add(_value);
         balances[this] = balances[this].sub(_value);
 
