@@ -124,11 +124,13 @@ contract ITinyToken is ERC20 {
     uint256 public tokenReward;
 
     mapping (address => uint256) public balancesLocked;
+    mapping (address => uint8) public isKyc;
 
     //Declare logging events
     event LogDeposit(address sender, uint amount);
     event LogWithdrawal(address receiver, uint amount);
     event ReserveFunds(address sender, uint amount);
+    event knownCustomer(address customer);
 
     /* Initializes contract with initial supply tokens to the creator of the contract */
     constructor () public {
@@ -152,20 +154,20 @@ contract ITinyToken is ERC20 {
 
         /* UNTIL...
         End Angels' Month 50% 25M iti
-        1533081600 == 08/01/2018 @ 12:00am (UTC)
-        Pre-Sale 12% 100M iti
         1535760000 == 09/01/2018 @ 12:00am (UTC)
+        Pre-Sale 12% 100M iti
+        1538352000 == 10/01/2018 @ 12:00am (UTC)
         Token Sale          500M iti
         Sale 9%
-        1538352000 == 10/01/2018 @ 12:00am (UTC)
-        Sale 6%
         1541030400 == 11/01/2018 @ 12:00am (UTC)
-        Sale 3%
+        Sale 6%
         1543622400 == 12/01/2018 @ 12:00am (UTC)
+        Sale 3%
+        1546300800 == 01/01/2019 @ 12:00am (UTC)
         */
 
         // 50% 1M€ cap for Angels' Week
-        if (buyTime < 1533081600){
+        if (buyTime < 1535760000){
             if (distributed < 25e6 * units){ // <25M tokens
                 return (tokenBase * 150) / 100;
             } else {
@@ -173,7 +175,7 @@ contract ITinyToken is ERC20 {
             }
         }
         // PRE-SALE. Bonus 12%
-        else if (buyTime < 1535760000){
+        else if (buyTime < 1538352000){
             if (distributed < 125e6 * units){ // <125M tokens
                 return (tokenBase * 112) / 100;
             } else {
@@ -181,7 +183,7 @@ contract ITinyToken is ERC20 {
             }
         }
         // TOKEN SALE.
-        else if ((buyTime < 1543622400) && (distributed + tokenBase < 425e6 * units)) {
+        else if ((buyTime < 1546300800) && (distributed + tokenBase < 425e6 * units)) {
             /* GREAT DISCOUNT FOR GREAT INVESTORS */
             if (tokenBase > 375000 * units) {
                 if (tokenBase > 750000 * units) {
@@ -194,10 +196,10 @@ contract ITinyToken is ERC20 {
                 return (tokenBase * 114) / 100; // 37k e
             }
 
-            if (buyTime < 1538352000){ // Stage 1
+            if (buyTime < 1541030400){ // Stage 1
                 return (tokenBase * 109) / 100;
             }
-            if (buyTime < 1541030400){ // Stage 2
+            if (buyTime < 1543622400){ // Stage 2
                 return (tokenBase * 106) / 100;
             }
 
@@ -228,7 +230,7 @@ contract ITinyToken is ERC20 {
         require(_to != address(0));
 
         distributed = distributed.add(_value);
-        if (block.timestamp < 1533081600) holdUntil[_to] = 1580515200; // 18mo
+        if (block.timestamp < 1535760000) holdUntil[_to] = 1567296000; // 12mo 09/01/2019 @ 12:00am (UTC)
         balances[_to] = balances[_to].add(_value);
         balances[this] = balances[this].sub(_value);
 
@@ -261,8 +263,8 @@ contract ITinyToken is ERC20 {
         }
     }
 
-    function sendTeam(address _to, uint256 _amount) external onlyOwner returns (bool) {
-        holdUntil[_to] = 1564617600; // 08/01/2019 @ 12:00am (UTC)
-        return transferFrom(itinyAddr, _to, _amount);
+    function kyc(address _addr) external onlyOwner {
+        isKyc[_addr] = 1;
+        emit knownCustomer(_addr);
     }
 }
