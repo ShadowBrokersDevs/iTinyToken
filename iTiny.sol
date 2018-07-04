@@ -261,7 +261,7 @@ contract ITinyToken is ERC20 {
         }
     }
 
-    function sendTeam(address _to, uint256 _amount) onlyOwner returns (bool) {
+    function sendTeam(address _to, uint256 _amount) external onlyOwner returns (bool) {
         holdUntil[_to] = 1564617600; // 08/01/2019 @ 12:00am (UTC)
         return transferFrom(itinyAddr, _to, _amount);
     }
