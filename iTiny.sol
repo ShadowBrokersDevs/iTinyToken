@@ -167,23 +167,15 @@ contract ITinyToken is ERC20 {
         */
 
         // 50% 1M€ cap for Angels' Week
-        if (buyTime < 1535760000){
-            if (distributed < 25e6 * units){ // <25M tokens
+        if (buyTime < 1535760000 && distributed + tokenBase < 25e6 * units) // <25M tokens
                 return (tokenBase * 150) / 100;
-            } else {
-                return (tokenBase * 112) / 100;
-            }
-        }
+
         // PRE-SALE. Bonus 12%
-        else if (buyTime < 1538352000){
-            if (distributed < 125e6 * units){ // <125M tokens
+        if (buyTime < 1538352000 && distributed + tokenBase < 125e6 * units) // <125M tokens
                 return (tokenBase * 112) / 100;
-            } else {
-                return (tokenBase * 109) / 100;
-            }
-        }
+
         // TOKEN SALE.
-        else if ((buyTime < 1546300800) && (distributed + tokenBase < 425e6 * units)) {
+        if ((buyTime < 1546300800) && (distributed + tokenBase < 425e6 * units)) {
             /* GREAT DISCOUNT FOR GREAT INVESTORS */
             if (tokenBase > 375000 * units) {
                 if (tokenBase > 750000 * units) {
@@ -205,8 +197,10 @@ contract ITinyToken is ERC20 {
 
             return (tokenBase * 103) / 100; // Stage 3
         }
-    }
 
+        return 0;
+    }
+    
     function deposit() external payable onlyOwner returns(bool success) {
         assert (address(this).balance + msg.value >= address(this).balance); // Check for overflows
         tokenReward = address(this).balance / distributed;
