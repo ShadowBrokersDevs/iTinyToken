@@ -40,11 +40,9 @@ contract ERC20 is Ownable {
     /* Public variables for the ERC20 token */
     string public constant standard = "ERC20 iTiny";
     uint8 public constant decimals = 8; // hardcoded to be a constant
-    uint32 internal constant units = 1e8;
-    uint256 public totalSupply;
-    uint256 public distributed;
-    string public name;
-    string public symbol;
+    uint256 public constant totalSupply = 50000000000000000; // 500M * 10^decimals
+    string public constant name = "iTiny Blockchain Homes";
+    string public constant symbol = "IBH";
 
     event Transfer(address indexed from, address indexed to, uint256 value);
     event Approval(address indexed owner, address indexed spender, uint256 value);
@@ -119,9 +117,10 @@ interface tokenRecipient {
 contract ITinyToken is ERC20 {
 
     // Contract variables and constants
-    uint256 constant maxSupply = 50000000000000000; // 500M * 10^decimals
-    address public itinyAddr = ; // CHANGE FOR REAL BENEFICIARY!!
+    uint32 internal constant units = 1e8;
+    address public constant itinyAddr = ; // CHANGE FOR REAL BENEFICIARY!!
     uint256 public tokenReward;
+    uint256 public distributed;
 
     mapping (address => uint256) public balancesLocked;
     mapping (address => uint8) public isKyc;
@@ -134,12 +133,9 @@ contract ITinyToken is ERC20 {
 
     /* Initializes contract with initial supply tokens to the creator of the contract */
     constructor () public {
-        balances[this] = (maxSupply * 80) / 100; // 80%
-        distributed = maxSupply.sub(balances[this]);
+        balances[this] = (totalSupply * 80) / 100; // 80%
+        distributed = totalSupply.sub(balances[this]);
         balances[itinyAddr] = distributed; // 20%
-        totalSupply = maxSupply;      // Max supply
-        name = "iTinyToken";
-        symbol = "ITNY";
     }
 
     function () public payable {
@@ -150,7 +146,7 @@ contract ITinyToken is ERC20 {
         uint256 buyTime = block.timestamp; // only one read from state
         //ufixed128x19 tokensPerEth = 4641.9 ; // 464.19€/ETH * 10
         uint256 tokenBase = (msg.value * 46419 * units) / 1e19; // /(1e18*10)
-        uint256 distributed = totalSupply.sub(balances[this]);
+        //uint256 distributed = totalSupply.sub(balances[this]);
 
         /* UNTIL...
         End Angels' Month 50% 25M iti
@@ -211,7 +207,7 @@ contract ITinyToken is ERC20 {
     }
 
     function buy() public payable {
-        require(distributed < maxSupply);
+        require(distributed < totalSupply);
         require(block.timestamp < timeEndSale);
 
         uint256 tokenAmount = tokensDelivered();
@@ -241,20 +237,17 @@ contract ITinyToken is ERC20 {
         require(block.timestamp <= timeEndSale || msg.sender == owner);
         uint256 _amount;
         if (owner == msg.sender) {
-            _amount = balances[_addr];
-            balances[_addr] = 0;
-            balancesLocked[_addr] = balancesLocked[_addr].add(_amount);
-            balances[0] = balances[0].add(_amount);
-            emit ReserveFunds(_addr, _amount);
+            address account = _addr;
         } else {
-            require(holdUntil[msg.sender] == 0);
-            _amount = balances[msg.sender];
             require(_amount > 370000 * units);
-            balances[msg.sender] = 0;
-            balancesLocked[msg.sender] = balancesLocked[msg.sender].add(_amount);
-            balances[0] = balances[0].add(_amount);
-            emit ReserveFunds(msg.sender, _amount);
+            require(holdUntil[msg.sender] == 0);
+            address account = msg.sender;
         }
+        _amount = balances[account];
+        balances[account] = 0;
+        balancesLocked[account] = balancesLocked[account].add(_amount);
+        balances[0] = balances[0].add(_amount);
+        emit ReserveFunds(account, _amount);
     }
 
     function kyc(address _addr) external onlyOwner {
