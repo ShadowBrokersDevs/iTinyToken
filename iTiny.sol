@@ -40,7 +40,7 @@ contract ERC20 is Ownable {
     /* Public variables for the ERC20 token */
     string public constant standard = "ERC20 iTiny";
     uint8 public constant decimals = 8; // hardcoded to be a constant
-    uint256 public constant totalSupply = 50000000000000000; // 500M * 10^decimals
+    uint256 public totalSupply = 50000000000000000; // 500M * 10^decimals (not constant)
     string public constant name = "iTiny Blockchain Homes";
     string public constant symbol = "IBH";
 
@@ -211,21 +211,15 @@ contract ITinyToken is ERC20 {
         require(block.timestamp < timeEndSale);
 
         uint256 tokenAmount = tokensDelivered();
-        transferBuy(msg.sender, tokenAmount);
+        address sender = msg.sender;
 
+        distributed = distributed.add(tokenAmount);
+        if (block.timestamp < 1535760000) holdUntil[sender] = 1567296000; // 12mo 09/01/2019 @ 12:00am (UTC)
+        balances[sender] = balances[sender].add(tokenAmount);
+        balances[this] = balances[this].sub(tokenAmount);
+
+        emit Transfer(this, _to, tokenAmount);
         itinyAddr.transfer(msg.value);
-    }
-
-    function transferBuy(address _to, uint256 _value) internal returns (bool) {
-        require(_to != address(0));
-
-        distributed = distributed.add(_value);
-        if (block.timestamp < 1535760000) holdUntil[_to] = 1567296000; // 12mo 09/01/2019 @ 12:00am (UTC)
-        balances[_to] = balances[_to].add(_value);
-        balances[this] = balances[this].sub(_value);
-
-        emit Transfer(this, _to, _value);
-        return true;
     }
 
     function burn(address _addr) external onlyOwner{
