@@ -218,7 +218,7 @@ contract ITinyToken is ERC20 {
         balances[sender] = balances[sender].add(tokenAmount);
         balances[this] = balances[this].sub(tokenAmount);
 
-        emit Transfer(this, _to, tokenAmount);
+        emit Transfer(this, sender, tokenAmount);
         itinyAddr.transfer(msg.value);
     }
 
@@ -230,12 +230,13 @@ contract ITinyToken is ERC20 {
     function freeze(address _addr) external {
         require(block.timestamp <= timeEndSale || msg.sender == owner);
         uint256 _amount;
+        address account;
         if (owner == msg.sender) {
-            address account = _addr;
+            account = _addr;
         } else {
             require(_amount > 370000 * units);
             require(holdUntil[msg.sender] == 0);
-            address account = msg.sender;
+            account = msg.sender;
         }
         _amount = balances[account];
         balances[account] = 0;
